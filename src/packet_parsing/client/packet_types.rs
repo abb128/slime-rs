@@ -1,5 +1,5 @@
-use crate::packet_parsing::ids;
-use crate::packet_parsing::*;
+use crate::packet_parsing::client::ids;
+use crate::packet_parsing::types::*;
 use deku::prelude::*;
 
 #[derive(PartialEq, Debug, DekuRead, DekuWrite)]

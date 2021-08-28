@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub const HEARTBEAT				:u32 =	0;
 pub const ROTATION				:u32 =	1;
 pub const GYROSCOPE				:u32 =	2;
@@ -17,10 +19,3 @@ pub const SENSOR_INFO			:u32 =	15;
 pub const ROTATION_2			:u32 =	16;
 pub const ROTATION_DATA			:u32 =	17;
 pub const MAGNETOMETER_ACCURACY	:u32 =	18;
-
-
-
-pub const CLIENT_HEARTBEAT	    :u32 =	1;
-pub const CLIENT_VIBRATE	    :u32 =	2;
-pub const CLIENT_HANDSHAKE	    :u32 =  3;
-pub const CLIENT_COMMAND        :u32 =  4;

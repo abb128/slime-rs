@@ -1,9 +1,10 @@
 #[cfg(test)]
-mod tests {
-    use crate::packet_parsing::parse_slice;
-	use crate::packet_parsing::parse_buf;
-	use crate::packet_parsing::*;
-	use crate::packet_parsing::ids;
+mod parse_tests {
+    use crate::packet_parsing::server::parse_slice;
+	use crate::packet_parsing::server::parse_buf;
+	use crate::packet_parsing::server::ids;
+	use crate::packet_parsing::server::*;
+	use crate::packet_parsing::types::*;
 	use bytes::{BytesMut, BufMut, Buf};
 
 	#[test]

@@ -1,7 +1,7 @@
 [package]
 name = "slime-rs"
-version = "0.1.0"
-authors = ["abb128 <alexx128p@gmail.com>"]
+version = "0.0.1"
+authors = ["abb128"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
