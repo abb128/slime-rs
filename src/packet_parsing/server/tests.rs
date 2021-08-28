@@ -11,6 +11,9 @@ mod parse_tests {
 	fn assert_encoded_is_equal(buf: &BytesMut, parsed: &PacketType){
 		let encoded = to_bytes(&parsed).unwrap();
 
+		assert!(buf.remaining() > 0, 
+			"This test is invalid - the original buffer is blank");
+
 		for i in 0..buf.remaining() {
 			assert_eq!(encoded[i], buf[i]);
 		}
