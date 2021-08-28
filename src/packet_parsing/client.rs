@@ -1,15 +1,18 @@
+// Packets received by the CLIENT
+// (sent by the server)
+
 pub mod packet_types;
 pub mod ids;
 mod tests;
 
 pub use packet_types::*;
 
-use deku::DekuContainerRead;
+use deku::{DekuContainerRead, DekuContainerWrite};
 use bytes::Buf;
 
 #[allow(dead_code)]
-pub fn parse_buf(bb: &mut dyn Buf) -> Option<PacketType> {
-	let result = PacketType::from_bytes((bb.chunk(), 0));
+pub fn parse_slice(b: &[u8]) -> Option<PacketType> {
+	let result = PacketType::from_bytes((b, 0));
 
 	match result {
 		Ok((_rest, result)) => {
@@ -22,12 +25,17 @@ pub fn parse_buf(bb: &mut dyn Buf) -> Option<PacketType> {
 }
 
 #[allow(dead_code)]
-pub fn parse_slice(b: &[u8]) -> Option<PacketType> {
-	let result = PacketType::from_bytes((b, 0));
+pub fn parse_buf(bb: &mut dyn Buf) -> Option<PacketType> {
+    parse_slice(bb.chunk())
+}
 
-	match result {
-		Ok((_rest, result)) => {
-			Some(result)
+#[allow(dead_code)]
+pub fn to_bytes(pk: &PacketType) -> Option<Vec<u8>> {
+    let result = pk.to_bytes();
+
+    match result {
+		Ok(data) => {
+			Some(data)
 		}
 		Err(_) => {
 			None
