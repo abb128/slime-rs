@@ -7,6 +7,15 @@ mod parse_tests {
 	use crate::packet_parsing::types::*;
 	use bytes::{BytesMut, BufMut, Buf};
 
+
+	fn assert_encoded_is_equal(buf: &BytesMut, parsed: &PacketType){
+		let encoded = to_bytes(&parsed).unwrap();
+
+		for i in 0..buf.remaining() {
+			assert_eq!(encoded[i], buf[i]);
+		}
+	}
+
 	#[test]
 	fn test_parse_packet_id_and_heartbeat(){
 		for i in 0u64..64u64 {
@@ -31,6 +40,9 @@ mod parse_tests {
 					PacketID(i * 7u64)
 				)
 			);
+
+			assert_encoded_is_equal(&buf, &parsed_packet);
+			assert_encoded_is_equal(&buf, &parsed_packet2);
 		}
 	}
 
@@ -57,6 +69,8 @@ mod parse_tests {
 				w: 10.582f32
 			}
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -80,6 +94,8 @@ mod parse_tests {
 				z: 9.185f32
 			}
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -91,7 +107,7 @@ mod parse_tests {
 
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
-		match parsed_packet{
+		match &parsed_packet {
 			PacketType::Handshake(_, h) => {
 				assert_eq!(h.board_type, 0);
 				assert_eq!(h.imu_type, 0);
@@ -106,6 +122,8 @@ mod parse_tests {
 				panic!("Handshake data was not detected as handshake!");
 			}
 		}
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 	
 	#[test]
@@ -147,7 +165,7 @@ mod parse_tests {
 
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
-		match parsed_packet{
+		match &parsed_packet{
 			PacketType::Handshake(_, h) => {
 				assert_eq!(h.board_type, 259i32);
 				assert_eq!(h.imu_type, 175i32);
@@ -162,6 +180,8 @@ mod parse_tests {
 				panic!("Handshake data was not detected as handshake!");
 			}
 		}
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -185,6 +205,8 @@ mod parse_tests {
 				z: 1578925.85f32
 			}
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -208,6 +230,8 @@ mod parse_tests {
 				z: 1578925.85f32
 			}
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -237,6 +261,8 @@ mod parse_tests {
 				800i32
 			)
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -260,6 +286,8 @@ mod parse_tests {
 				0.5f32
 			)
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -283,6 +311,8 @@ mod parse_tests {
 				z: 0.5f32
 			}
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -300,6 +330,8 @@ mod parse_tests {
 			PacketID(64u64),
 			PingId(90000i32)
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -323,7 +355,7 @@ mod parse_tests {
 
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
-		match parsed_packet {
+		match &parsed_packet {
 			PacketType::Serial(_, data) => {
 				let SerialData(s) = data;
 				assert_eq!(s.to_string(), "AAAAAAAAAA");
@@ -331,6 +363,8 @@ mod parse_tests {
 
 			_ => panic!("Serial was not parsed as serial!")
 		}
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -348,6 +382,8 @@ mod parse_tests {
 			PacketID(64u64),
 			BatteryData(99.99f32)
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -367,6 +403,8 @@ mod parse_tests {
 			SensorID(3),
 			TapData(10)
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 
@@ -385,6 +423,8 @@ mod parse_tests {
 			PacketID(64u64),
 			ResetReasonData(-32i8)
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -407,6 +447,8 @@ mod parse_tests {
 				status: -32i8
 			}
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -432,6 +474,8 @@ mod parse_tests {
 				w: 0.001f32
 			}
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -467,6 +511,8 @@ mod parse_tests {
 				CalibrationInfo(90i8)
 			)
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -502,6 +548,8 @@ mod parse_tests {
 				CalibrationInfo(90i8)
 			)
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
@@ -521,6 +569,8 @@ mod parse_tests {
 			SensorID(58i8),
 			MagnetometerAccuracyData(-500.5f32)
 		));
+
+		assert_encoded_is_equal(&buf, &parsed_packet);
 	}
 
 	#[test]
