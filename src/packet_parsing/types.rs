@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use deku::prelude::*;
 
 #[derive(PartialEq, Debug, DekuRead, DekuWrite)]
@@ -29,9 +31,10 @@ impl Default for ImuInfo {
 }
 
 
-#[derive(PartialEq, Debug, DekuRead, DekuWrite)]
+#[derive(PartialEq, Clone, Eq, Hash, DekuRead, DekuWrite)]
 #[deku(endian = "endian", ctx = "endian: deku::ctx::Endian")]
 pub struct MacAddress(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
+
 
 
 impl ToString for MacAddress {
@@ -41,6 +44,12 @@ impl ToString for MacAddress {
 		format!("{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
 			a, b, c, d, e, f)
 	}
+}
+
+impl std::fmt::Debug for MacAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.to_string())
+    }
 }
 
 impl Default for MacAddress {
@@ -63,6 +72,7 @@ pub struct StringWithLength {
 
 impl ToString for StringWithLength {
 	fn to_string(&self) -> String {
+		// TODO: DO NOT USE EXPECT!!!
 		String::from_utf8(self.str_data.to_vec()).expect("Invalid UTF-8")
 	}
 }

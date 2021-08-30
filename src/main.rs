@@ -2,18 +2,24 @@
 mod packet_parsing;
 mod handler;
 
+use std::{thread, time::Duration};
+
 use crate::handler::*;
 
 fn main() -> std::io::Result<()> {
-    let mut client = UdpClient::new();
+    let mut server = UdpServer::new();
 
     loop {
-        let packets = client.poll_for_updates();
-        for packet in packets {
-            client.receive_packet(packet);
+        server.receive();
+        server.flush();
+
+
+        let trackers = server.get_trackers();
+        for i in 0..trackers.len() {
+           // println!("[{}]: {:?}", i, trackers[i].buf_rotations.get(&0));
         }
 
-        println!("{:?}", client.get_rotation(0));
+        //thread::sleep(Duration::from_millis(16u64));
     }
 
     Ok(())
