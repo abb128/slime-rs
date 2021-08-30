@@ -1,5 +1,5 @@
 use crate::packet_parsing::client::ids;
-use crate::packet_parsing::types::*;
+//use crate::packet_parsing::types::*;
 use deku::prelude::*;
 
 
@@ -39,17 +39,15 @@ pub struct HeartbeatToClient {
 }
 
 #[derive(PartialEq, Debug, DekuRead, DekuWrite)]
-#[deku(endian = "big")]
-#[deku(type = "u32")]
-pub enum PacketType {
+#[deku(endian = "endian", ctx = "endian: deku::ctx::Endian")]
+#[deku(magic = b"\0", type="u16")]
+pub enum OPacketType {
     #[deku(id = "ids::HEARTBEAT")]
 	Heartbeat(HeartbeatToClient),
 
     #[deku(id = "ids::VIBRATE")]
 	Vibrate(VibrateData),
 
-    #[deku(id = "ids::HANDSHAKE")]
-	Handshake(ClientHandshake),
     
     #[deku(id = "ids::COMMAND")]
 	Command(CommandType),
@@ -63,4 +61,22 @@ pub enum PacketType {
 
     #[deku(id = "ids::SENSOR_INFO")]
     SensorInfo
+}
+
+
+
+
+// This needs to be done like this to support handshake properly
+// (handshake expects first byte to be 3)
+// An alternative would be to have the u32 "\03Hey"
+// as its ID
+#[derive(PartialEq, Debug, DekuRead, DekuWrite)]
+#[deku(endian = "big")]
+#[deku(type = "u8")]
+pub enum PacketType {
+    #[deku(id = "ids::F_HANDSHAKE")]
+	Handshake(ClientHandshake),
+
+    #[deku(id = "ids::F_OTHER")]
+    Other(OPacketType)
 }
