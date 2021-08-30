@@ -16,10 +16,10 @@ fn main() -> std::io::Result<()> {
 
         let trackers = server.get_trackers();
         for i in 0..trackers.len() {
-           // println!("[{}]: {:?}", i, trackers[i].buf_rotations.get(&0));
+           println!("[{}] rotation: {:?}", i, trackers[i].buf_rotations.get(&0));
         }
 
-        //thread::sleep(Duration::from_millis(16u64));
+        thread::sleep(Duration::from_millis(64u64));
     }
 
     Ok(())

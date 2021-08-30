@@ -261,24 +261,3 @@ impl UdpClient {
         }
     }
 }
-
-/*
-
-    fn poll_for_updates(&mut self) -> Vec<server::PacketType> {
-        let mut packets: Vec<server::PacketType> = vec![];
-        loop {
-            let r = self.socket.recv_from(&mut self.buf);
-            match r {
-                Ok((size, addr)) => {
-                    self.last_addr = Some(addr.clone());
-                    let dec = server::parse_slice(&self.buf[0..size]);
-                    if let Some(packet) = dec {
-                        packets.push(packet);
-                    }
-                }
-                Err(_) => break
-            }
-        }
-
-        packets
-    }*/
