@@ -157,9 +157,11 @@ pub struct SerialData(pub StringWithLength);
 #[deku(endian = "endian", ctx = "endian: deku::ctx::Endian")]
 pub struct BatteryData(pub f32);
 
-#[derive(PartialEq, Debug, DekuRead, DekuWrite)]
+#[derive(PartialEq, Debug, DekuRead, DekuWrite, Hash, Clone)]
 #[deku(endian = "endian", ctx = "endian: deku::ctx::Endian")]
 pub struct SensorID(pub i8);
+
+impl Eq for SensorID {}
 
 #[derive(PartialEq, Debug, DekuRead, DekuWrite)]
 #[deku(endian = "endian", ctx = "endian: deku::ctx::Endian")]

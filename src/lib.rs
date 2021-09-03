@@ -1,5 +1,4 @@
 mod packet_parsing;
-mod handler;
 
 #[allow(unused_imports)]
 use bytes::{BufMut, BytesMut};

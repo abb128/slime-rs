@@ -1,26 +1,61 @@
+#![deny(rust_2018_idioms)]
 
 mod packet_parsing;
-mod handler;
+mod handler2;
+mod udpserver;
 
-use std::{thread, time::Duration};
+use std::{thread, time::{Duration, SystemTime}};
 
-use crate::handler::*;
+use crate::{packet_parsing::client};
+
+use crate::handler2::*;
+use crate::udpserver::*;
 
 fn main() -> std::io::Result<()> {
-    let mut server = UdpServer::new();
+    let mut collection = ServerCollection::default();
+
+    let mut udp = UdpServer::new(6969).unwrap();
+    collection.add_server(Box::new(udp));
+
+    loop {
+        collection.receive();
+        collection.flush();
+
+        for client in collection.clients() {
+            println!("{:?}", client)
+        }
+    }
+
+    /*
+    let mut server = UdpServer::new(6969).expect("Failed to create UDP Server");
 
     loop {
         server.receive();
         server.flush();
 
+        /*
+        let mut clients = server.get_trackers_mut();
+        for i in 0..clients.len() {
+            println!("[{}] rotation: {:?}", i, clients[i].get_data().buf_rotations.get(&0));
 
-        let trackers = server.get_trackers();
-        for i in 0..trackers.len() {
-           println!("[{}] rotation: {:?}", i, trackers[i].buf_rotations.get(&0));
-        }
 
-        thread::sleep(Duration::from_millis(64u64));
+            if SystemTime::now().duration_since(clients[i].get_data().last_vibrate).expect("asd") > Duration::from_millis(1000){
+                clients[i].get_data_mut().last_vibrate = SystemTime::now();
+                clients[i].send_packet(
+                        client::PacketType::Other(client::OPacketType::Vibrate(
+                            client::VibrateData {
+                                duration_seconds: 0.1,
+                                frequency: 1.0,
+                                amplitude: 1.0,
+                            }
+                        ))
+                );
+            }
+        }*/
+
+
+        thread::sleep(Duration::from_millis(32u64));
     }
-
+    */
     Ok(())
 }
