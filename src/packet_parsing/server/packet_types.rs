@@ -43,7 +43,7 @@ pub enum PacketType {
 	GyroCalibration(PacketID, GyroCalibrationData),
 
     #[deku(id = "ids::CONFIG")]
-	Config(PacketID, ConfigurationData),
+	Config(PacketID, DeviceConfig),
 
     #[deku(id = "ids::RAW_MAGNETOMETER")]
 	RawMagnetometer(PacketID, Vector),

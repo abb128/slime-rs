@@ -1,4 +1,4 @@
-use crate::packet_parsing::client::ids;
+use crate::packet_parsing::{client::ids, types::{DeviceConfig, Matrix3x3, PingId, SensorID, Vector}};
 //use crate::packet_parsing::types::*;
 use deku::prelude::*;
 
@@ -19,16 +19,15 @@ pub struct VibrateData {
 }
 
 
-// TODO
 #[derive(PartialEq, Debug, DekuRead, DekuWrite)]
 #[deku(endian = "endian", ctx = "endian: deku::ctx::Endian")]
 #[deku(type = "u32")]
 pub enum CommandType {
-    #[deku(id = "0")]
-    Calibrate,
     #[deku(id = "1")]
-    SendConfig,
+    Calibrate,
     #[deku(id = "2")]
+    SendConfig,
+    #[deku(id = "3")]
     Blink
 }
 
@@ -37,6 +36,10 @@ pub enum CommandType {
 pub struct HeartbeatToClient {
     pub extra: u8 // usually 0
 }
+
+
+pub type SensorStateNotified = bool;
+
 
 #[derive(PartialEq, Debug, DekuRead, DekuWrite)]
 #[deku(endian = "endian", ctx = "endian: deku::ctx::Endian")]
@@ -52,15 +55,14 @@ pub enum OPacketType {
     #[deku(id = "ids::COMMAND")]
 	Command(CommandType),
 
-    // TODO
     #[deku(id = "ids::CONFIG")]
-    Config,
+    Config(DeviceConfig),
 
     #[deku(id = "ids::PING")]
-    Ping,
+    Ping(PingId),
 
     #[deku(id = "ids::SENSOR_INFO")]
-    SensorInfo
+    SensorInfo(SensorID, SensorStateNotified)
 }
 
 

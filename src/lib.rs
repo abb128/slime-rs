@@ -14,6 +14,6 @@ fn example(){
 	let result = packet_parsing::server::parse_buf(&mut buf).unwrap();
 
 	assert_eq!(result, packet_parsing::server::PacketType::Heartbeat(
-		packet_parsing::types::PacketID(7u64)
+		(7u64)
 	));
 }

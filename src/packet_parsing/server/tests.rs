@@ -31,7 +31,7 @@ mod parse_tests {
 
 			assert_eq!(parsed_packet,
 				PacketType::Heartbeat(
-					PacketID(i * 7u64)
+					(i * 7u64) as PacketID
 				)
 			);
 
@@ -40,7 +40,7 @@ mod parse_tests {
 
 			assert_eq!(parsed_packet2,
 				PacketType::Heartbeat(
-					PacketID(i * 7u64)
+					(i * 7u64) as PacketID
 				)
 			);
 
@@ -64,7 +64,7 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::Rotation(
-			PacketID(64u64),
+			(64u64) as PacketID,
 			Quaternion {
 				x: 5.12f32,
 				y: 1.28f32,
@@ -90,7 +90,7 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::Gyroscope(
-			PacketID(64u64),
+			(64u64) as PacketID,
 			Vector {
 				x: 5.12f32,
 				y: 1.28f32,
@@ -201,7 +201,7 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::Accelerometer(
-			PacketID(64u64),
+			(64u64) as PacketID,
 			Vector {
 				x: 5824.12f32,
 				y: 57578.32f32,
@@ -226,7 +226,7 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::Magnetometer(
-			PacketID(64u64),
+			(64u64) as PacketID,
 			Vector {
 				x: 5824.12f32,
 				y: 57578.32f32,
@@ -254,7 +254,7 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::RawCalibration(
-			PacketID(64u64),
+			(64u64) as PacketID,
 			RawCalibrationData(
 				10i32,
 				100i32,
@@ -282,7 +282,7 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::GyroCalibration(
-			PacketID(64u64),
+			(64u64) as PacketID,
 			GyroCalibrationData(
 				0.1f32,
 				0.1f32,
@@ -307,7 +307,7 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::RawMagnetometer(
-			PacketID(64u64),
+			(64u64) as PacketID,
 			Vector {
 				x: 0.1f32,
 				y: 0.1f32,
@@ -330,8 +330,8 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::Ping(
-			PacketID(64u64),
-			PingId(90000i32)
+			(64u64) as PacketID,
+			(90000i32) as PingId
 		));
 
 		assert_encoded_is_equal(&buf, &parsed_packet);
@@ -382,7 +382,7 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::Battery(
-			PacketID(64u64),
+			(64u64) as PacketID,
 			BatteryData(99.99f32)
 		));
 
@@ -402,8 +402,8 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::Tap(
-			PacketID(64u64),
-			SensorID(3),
+			(64u64) as PacketID,
+			(3) as SensorID,
 			TapData(10)
 		));
 
@@ -423,7 +423,7 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::ResetReason(
-			PacketID(64u64),
+			(64u64) as PacketID,
 			ResetReasonData(-32i8)
 		));
 
@@ -444,8 +444,8 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::SensorInfo(
-			PacketID(64u64),
-			SensorID(4i8),
+			(64u64) as PacketID,
+			(4i8) as SensorID,
 			SensorInfoData {
 				status: -32i8
 			}
@@ -469,7 +469,7 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::Rotation2(
-			PacketID(64u64),
+			(64u64) as PacketID,
 			Quaternion {
 				x: 10.20f32,
 				y: 59.57832f32,
@@ -502,8 +502,8 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::RotationData(
-			PacketID(64u64),
-			SensorID(3i8),
+			(64u64) as PacketID,
+			(3i8) as SensorID,
 			RotationDataType::Normal(
 				Quaternion {
 					x: 10.20f32,
@@ -539,8 +539,8 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::RotationData(
-			PacketID(64u64),
-			SensorID(3i8),
+			(64u64) as PacketID,
+			(3i8) as SensorID,
 			RotationDataType::Correction(
 				Quaternion {
 					x: 10.20f32,
@@ -568,8 +568,8 @@ mod parse_tests {
 		let parsed_packet = parse_buf(&mut buf).unwrap();
 
 		assert_eq!(parsed_packet, PacketType::MagnetometerAccuracy(
-			PacketID(64u64),
-			SensorID(58i8),
+			(64u64) as PacketID,
+			(58i8) as SensorID,
 			MagnetometerAccuracyData(-500.5f32)
 		));
 

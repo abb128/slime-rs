@@ -95,8 +95,12 @@ impl Client {
         self.tracker.last_heartbeat = SystemTime::now();
     }
 
-    pub fn find_client_type(&mut self, ctype: &ClientType) -> Option<&mut ClientTypeData> {
+    pub fn find_client_type_mut(&mut self, ctype: &ClientType) -> Option<&mut ClientTypeData> {
         return self.clients.get_mut(ctype);
+    }
+
+    pub fn find_client_type(&self, ctype: &ClientType) -> Option<&ClientTypeData> {
+        return self.clients.get(ctype);
     }
     
     pub fn insert_client_type(&mut self, t: ClientType, d: ClientTypeData) -> Result<&mut ClientTypeData, &str> {
@@ -114,7 +118,7 @@ impl Client {
 
         match pkt {
             server::PacketType::Heartbeat(_) => {},
-            server::PacketType::Rotation(_, q) => self.update_rotation(SensorID(0), q),
+            server::PacketType::Rotation(_, q) => self.update_rotation(0, q),
             server::PacketType::Gyroscope(_, _) => {},
             server::PacketType::Handshake(_, h) => self.handle_handshake(h),
             server::PacketType::Accelerometer(_, _) => {},
@@ -132,7 +136,7 @@ impl Client {
             server::PacketType::Tap(_, _, _) => todo!(),
             server::PacketType::ResetReason(_, _) => todo!(),
             server::PacketType::SensorInfo(_, _, _) => todo!(),
-            server::PacketType::Rotation2(_, q) => self.update_rotation(SensorID(1), q),
+            server::PacketType::Rotation2(_, q) => self.update_rotation(1, q),
             server::PacketType::RotationData(_, i, t) => todo!(),
             server::PacketType::MagnetometerAccuracy(_, _, _) => todo!(),
         }
