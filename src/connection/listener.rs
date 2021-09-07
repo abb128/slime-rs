@@ -37,6 +37,10 @@ impl ListenerCollection {
         for server in &mut self.listeners {
             server.flush(&mut self.remotes);
         }
+
+        for (_, remote) in &mut self.remotes {
+            remote.clear_outgoing();
+        }
     }
 
     pub fn add_server(&mut self, server: Box<dyn Listener>) {

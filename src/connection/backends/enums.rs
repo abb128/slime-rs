@@ -1,8 +1,10 @@
+use std::net::SocketAddr;
 
 #[derive(Debug, Hash, PartialEq, Eq)]
 pub enum BackendType {
-    Udp
+    Udp(SocketAddr)
 }
+
 
 
 use super::udp::UdpClient;
