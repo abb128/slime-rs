@@ -1,54 +1,13 @@
-use std::{collections::HashMap, fmt::Write, net::SocketAddr};
+use std::{collections::HashMap};
 use crate::packet_parsing::{client, server, types::{self, MacAddress, Quaternion, SensorID}};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use std::collections::VecDeque;
+use std::time::{SystemTime};
+use crate::tracker::TrackerData;
 
-#[derive(Debug)]
-pub struct Sensor {
-    pub last_quat: Quaternion
-}
-
-impl Default for Sensor {
-    fn default() -> Self {
-        Self {
-                last_quat: Quaternion {
-                x: 0.0,
-                y: 0.0,
-                z: 0.0,
-                w: 0.0
-            }
-        }
-    }
-}
-
-
-#[derive(Debug)]
-pub struct TrackerData {
-    pub sensors: HashMap<SensorID, Sensor>,
-    pub last_heartbeat: SystemTime,
-}
-
-
-impl TrackerData {
-    fn get_sensor_or_default(&mut self, id: SensorID) -> &mut Sensor {
-        return self.sensors.entry(id).or_insert(Sensor::default())
-    }
-
-    fn update_rotation(&mut self, id: SensorID, quat: Quaternion){
-        self.get_sensor_or_default(id).last_quat = quat;
-    }
-}
-
-
-impl Default for TrackerData {
-    fn default() -> Self {
-        Self { sensors: Default::default(), last_heartbeat: SystemTime::now() }
-    }
-}
+use super::backends::enums::*;
 
 #[derive(Debug)]
 pub struct Client {
-    clients: HashMap<ClientType, Box<dyn ClientTypeDataTrait>>,
+    clients: HashMap<BackendType, Box<dyn BackendRemoteData>>,
     outgoing_buf: Vec<client::PacketType>,
 
     tracker: TrackerData,
@@ -95,15 +54,15 @@ impl Client {
         self.tracker.last_heartbeat = SystemTime::now();
     }
 
-    pub fn find_client_type_mut<'a>(&'a mut self, ctype: &ClientType) -> Option<ClientTypeDataMut<'a>> {
+    pub fn find_client_type_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>> {
         Some(self.clients.get_mut(ctype)?.get_data_mut())
     }
 
-    pub fn find_client_type<'a>(&'a self, ctype: &ClientType) -> Option<ClientTypeData<'a>> {
+    pub fn find_client_type<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>> {
         Some(self.clients.get(ctype)?.get_data())
     }
     
-    pub fn insert_client_type(&mut self, t: ClientType, d: Box<dyn ClientTypeDataTrait>) -> Result<&mut Box<dyn ClientTypeDataTrait>, &str> {
+    pub fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, &str> {
         if let Some(a) = self.clients.get(&t) {
             return Result::Err("Client type already exists!");
         }
@@ -144,61 +103,3 @@ impl Client {
 }
 
 
-#[derive(Debug, Hash, PartialEq, Eq)]
-pub enum ClientType {
-    Udp
-}
-
-
-use crate::udpserver::UdpClient;
-#[derive(Debug)]
-pub enum ClientTypeData<'a> {
-    Udp(&'a UdpClient)
-}
-
-#[derive(Debug)]
-pub enum ClientTypeDataMut<'a> {
-    Udp(&'a mut UdpClient)
-}
-
-
-pub trait ClientTypeDataTrait: core::fmt::Debug {
-    fn get_data(&self) -> ClientTypeData<'_>;
-    fn get_data_mut(&mut self) -> ClientTypeDataMut<'_>;
-}
-
-pub type ClientMap = HashMap<MacAddress, Client>;
-
-#[derive(Default)]
-pub struct ServerCollection {
-    servers: Vec<Box<dyn ClientServer>>,
-    clients: ClientMap
-}
-
-pub trait ClientServer {
-    fn receive(&mut self, client_map: &mut ClientMap); // receives and processes incoming packets
-    fn flush(&mut self, client_map: &mut ClientMap);   // flushes buffered outgoing packets
-}
-
-impl ServerCollection {
-    pub fn clients(&mut self) -> std::collections::hash_map::Values<'_, MacAddress, Client> {
-        let values = self.clients.values().into_iter();
-        return values;
-    }
-
-    pub fn receive(&mut self) {
-        for server in &mut self.servers {
-            server.receive(&mut self.clients);
-        }
-    }
-
-    pub fn flush(&mut self) {
-        for server in &mut self.servers {
-            server.flush(&mut self.clients);
-        }
-    }
-
-    pub fn add_server(&mut self, server: Box<dyn ClientServer>) {
-        self.servers.push(server);
-    }
-}

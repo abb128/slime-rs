@@ -1,6 +1,8 @@
-use crate::packet_parsing::server::ids;
-use crate::packet_parsing::types::*;
+use super::ids;
+use super::super::types::*;
+
 use deku::prelude::*;
+
 
 #[derive(PartialEq, Debug, DekuRead, DekuWrite)]
 #[deku(endian = "endian", ctx = "endian: deku::ctx::Endian")]

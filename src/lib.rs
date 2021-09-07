@@ -1,4 +1,9 @@
+#![deny(rust_2018_idioms)]
+
 mod packet_parsing;
+mod connection;
+mod tracker;
+mod types;
 
 #[allow(unused_imports)]
 use bytes::{BufMut, BytesMut};

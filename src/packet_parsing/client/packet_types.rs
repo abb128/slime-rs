@@ -1,5 +1,6 @@
-use crate::packet_parsing::{client::ids, types::{DeviceConfig, Matrix3x3, PingId, SensorID, Vector}};
-//use crate::packet_parsing::types::*;
+use super::ids;
+use super::super::types::*;
+
 use deku::prelude::*;
 
 

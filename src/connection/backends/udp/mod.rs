@@ -1,7 +1,9 @@
 use std::{collections::HashMap, fmt::Debug, net::{IpAddr, SocketAddr, UdpSocket}};
 
-use crate::{handler2::*, packet_parsing::{server, client, types::{HandshakeData, MacAddress}}};
+use crate::{connection::{client::Client, listener::{Listener, RemoteMap}}, packet_parsing::{server, client, types::{HandshakeData, MacAddress}}};
 use std::time::SystemTime;
+
+use super::enums::{BackendDataMutRef, BackendDataRef, BackendRemoteData, BackendType};
 
 pub struct UdpServer {
     socket: UdpSocket,
@@ -35,8 +37,8 @@ fn ensure_pseudomac(data: &mut HandshakeData, addr: &SocketAddr) {
 
 impl UdpServer {
     fn get_udp_client_mut(client: &mut Client) -> Option<&mut UdpClient> {
-        if let Some(ClientTypeDataMut::Udp(udp))
-        = client.find_client_type_mut(&ClientType::Udp)
+        if let Some(BackendDataMutRef::Udp(udp))
+        = client.find_client_type_mut(&BackendType::Udp)
         {
             return Some(udp);
         }
@@ -45,8 +47,8 @@ impl UdpServer {
     }
 
     fn get_udp_client(client: &Client) -> Option<&UdpClient> {
-        if let Some(ClientTypeData::Udp(udp))
-        = client.find_client_type(&ClientType::Udp)
+        if let Some(BackendDataRef::Udp(udp))
+        = client.find_client_type(&BackendType::Udp)
         {
             return Some(udp);
         }
@@ -66,7 +68,7 @@ impl UdpServer {
         Ok(srv)
     }
 
-    pub fn receive_packet(&mut self, size: usize, addr: SocketAddr, client_map: &mut ClientMap) -> Option<()> {
+    pub fn receive_packet(&mut self, size: usize, addr: SocketAddr, client_map: &mut RemoteMap) -> Option<()> {
         let dec = server::parse_slice(&self.buf[0..size])?;
 
         if let server::PacketType::Handshake(_, mut dat) = dec {
@@ -90,7 +92,7 @@ impl UdpServer {
                 last_addr: addr,
                 last_activity: SystemTime::now()
             };
-            let insert_result = c.insert_client_type(ClientType::Udp, Box::new(udp_client));
+            let insert_result = c.insert_client_type(BackendType::Udp, Box::new(udp_client));
             if let Err(msg) = insert_result {
                 println!("Failed to insert client: {}", msg);
             }
@@ -112,8 +114,8 @@ impl UdpServer {
     }
 }
 
-impl ClientServer for UdpServer {
-    fn receive(&mut self, client_map: &mut ClientMap) {
+impl Listener for UdpServer {
+    fn receive(&mut self, client_map: &mut RemoteMap) {
         loop {
             let r = self.socket.recv_from(&mut self.buf);
             match r {
@@ -125,7 +127,7 @@ impl ClientServer for UdpServer {
         }
     }
 
-    fn flush(&mut self, client_map: &mut ClientMap) {
+    fn flush(&mut self, client_map: &mut RemoteMap) {
         for (mac, client) in client_map.iter_mut() {
             let outgoing = client.get_outgoing_packets();
             if outgoing.len() == 0 { continue; }
@@ -158,12 +160,12 @@ pub struct UdpClient {
                               // TODO: in case of Bluetooth or TCP, a more reliable method can be used
 }
 
-impl ClientTypeDataTrait for UdpClient {
-    fn get_data(&self) -> ClientTypeData<'_> {
-        ClientTypeData::Udp(self)
+impl BackendRemoteData for UdpClient {
+    fn get_data(&self) -> BackendDataRef<'_> {
+        BackendDataRef::Udp(self)
     }
 
-    fn get_data_mut(&mut self) -> ClientTypeDataMut<'_> {
-        ClientTypeDataMut::Udp(self)
+    fn get_data_mut(&mut self) -> BackendDataMutRef<'_> {
+        BackendDataMutRef::Udp(self)
     }
 }

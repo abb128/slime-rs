@@ -1,18 +1,16 @@
 #![deny(rust_2018_idioms)]
 
 mod packet_parsing;
-mod handler2;
-mod udpserver;
+mod connection;
+mod tracker;
+mod types;
 
-use std::{thread, time::{Duration, SystemTime}};
+use connection::backends::udp::UdpServer;
 
-use crate::{packet_parsing::client};
-
-use crate::handler2::*;
-use crate::udpserver::*;
+use crate::connection::{listener::*};
 
 fn main() -> std::io::Result<()> {
-    let mut collection = ServerCollection::default();
+    let mut collection = ListenerCollection::default();
 
     let mut udp = UdpServer::new(6969).unwrap();
     collection.add_server(Box::new(udp));
