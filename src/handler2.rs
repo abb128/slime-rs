@@ -162,15 +162,9 @@ pub enum ClientTypeDataMut<'a> {
 }
 
 
-pub trait ClientTypeDataTrait {
+pub trait ClientTypeDataTrait: core::fmt::Debug {
     fn get_data(&self) -> ClientTypeData<'_>;
     fn get_data_mut(&mut self) -> ClientTypeDataMut<'_>;
-}
-
-impl core::fmt::Debug for dyn ClientTypeDataTrait {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_char('?')
-    }
 }
 
 pub type ClientMap = HashMap<MacAddress, Client>;
