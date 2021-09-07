@@ -1,4 +1,4 @@
-use std::{collections::HashMap, net::SocketAddr};
+use std::{collections::HashMap, fmt::Write, net::SocketAddr};
 use crate::packet_parsing::{client, server, types::{self, MacAddress, Quaternion, SensorID}};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::collections::VecDeque;
@@ -48,7 +48,7 @@ impl Default for TrackerData {
 
 #[derive(Debug)]
 pub struct Client {
-    clients: HashMap<ClientType, ClientTypeData>,
+    clients: HashMap<ClientType, Box<dyn ClientTypeDataTrait>>,
     outgoing_buf: Vec<client::PacketType>,
 
     tracker: TrackerData,
@@ -95,15 +95,15 @@ impl Client {
         self.tracker.last_heartbeat = SystemTime::now();
     }
 
-    pub fn find_client_type_mut(&mut self, ctype: &ClientType) -> Option<&mut ClientTypeData> {
-        return self.clients.get_mut(ctype);
+    pub fn find_client_type_mut<'a>(&'a mut self, ctype: &ClientType) -> Option<ClientTypeDataMut<'a>> {
+        Some(self.clients.get_mut(ctype)?.get_data_mut())
     }
 
-    pub fn find_client_type(&self, ctype: &ClientType) -> Option<&ClientTypeData> {
-        return self.clients.get(ctype);
+    pub fn find_client_type<'a>(&'a self, ctype: &ClientType) -> Option<ClientTypeData<'a>> {
+        Some(self.clients.get(ctype)?.get_data())
     }
     
-    pub fn insert_client_type(&mut self, t: ClientType, d: ClientTypeData) -> Result<&mut ClientTypeData, &str> {
+    pub fn insert_client_type(&mut self, t: ClientType, d: Box<dyn ClientTypeDataTrait>) -> Result<&mut Box<dyn ClientTypeDataTrait>, &str> {
         if let Some(a) = self.clients.get(&t) {
             return Result::Err("Client type already exists!");
         }
@@ -152,8 +152,25 @@ pub enum ClientType {
 
 use crate::udpserver::UdpClient;
 #[derive(Debug)]
-pub enum ClientTypeData {
-    Udp(UdpClient)
+pub enum ClientTypeData<'a> {
+    Udp(&'a UdpClient)
+}
+
+#[derive(Debug)]
+pub enum ClientTypeDataMut<'a> {
+    Udp(&'a mut UdpClient)
+}
+
+
+pub trait ClientTypeDataTrait {
+    fn get_data(&self) -> ClientTypeData<'_>;
+    fn get_data_mut(&mut self) -> ClientTypeDataMut<'_>;
+}
+
+impl core::fmt::Debug for dyn ClientTypeDataTrait {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_char('?')
+    }
 }
 
 pub type ClientMap = HashMap<MacAddress, Client>;

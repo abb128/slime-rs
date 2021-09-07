@@ -35,7 +35,7 @@ fn ensure_pseudomac(data: &mut HandshakeData, addr: &SocketAddr) {
 
 impl UdpServer {
     fn get_udp_client_mut(client: &mut Client) -> Option<&mut UdpClient> {
-        if let Some(ClientTypeData::Udp(udp))
+        if let Some(ClientTypeDataMut::Udp(udp))
         = client.find_client_type_mut(&ClientType::Udp)
         {
             return Some(udp);
@@ -90,7 +90,7 @@ impl UdpServer {
                 last_addr: addr,
                 last_activity: SystemTime::now()
             };
-            let insert_result = c.insert_client_type(ClientType::Udp, ClientTypeData::Udp(udp_client));
+            let insert_result = c.insert_client_type(ClientType::Udp, Box::new(udp_client));
             if let Err(msg) = insert_result {
                 println!("Failed to insert client: {}", msg);
             }
@@ -156,4 +156,14 @@ pub struct UdpClient {
     last_activity: SystemTime // TODO: use this to determine if the client is still active
                               // TODO 1: ClientServer trait have method is_alive() -> bool, determine based on last activity in case of UDP
                               // TODO: in case of Bluetooth or TCP, a more reliable method can be used
+}
+
+impl ClientTypeDataTrait for UdpClient {
+    fn get_data(&self) -> ClientTypeData<'_> {
+        ClientTypeData::Udp(self)
+    }
+
+    fn get_data_mut(&mut self) -> ClientTypeDataMut<'_> {
+        ClientTypeDataMut::Udp(self)
+    }
 }
