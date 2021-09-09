@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Debug, net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4, UdpSocket}, str::FromStr};
+use std::{collections::HashMap, fmt::Debug, net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket}};
 
 use crate::{connection::{client::Client, listener::{Listener, RemoteMap}}, packet_parsing::{server, client, types::{HandshakeData, MacAddress}}};
 use std::time::SystemTime;
@@ -140,7 +140,7 @@ impl Listener for UdpServer {
     }
 
     fn flush(&mut self, client_map: &mut RemoteMap) {
-        for (mac, client) in client_map.iter_mut() {
+        for (_, client) in client_map.iter_mut() {
             let outgoing = client.get_outgoing_packets();
             if outgoing.len() == 0 { continue; }
             

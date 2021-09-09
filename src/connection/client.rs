@@ -14,6 +14,9 @@ pub struct Client {
     mac: MacAddress
 }
 
+// TOOD: Send heartbeat
+// TODO: Allow server::PacketType
+
 impl Client {
     pub fn new(data: &types::HandshakeData) -> Client {
         Client {
@@ -22,6 +25,10 @@ impl Client {
             outgoing_buf: Default::default(),
             mac: data.mac_address.clone()
         }
+    }
+
+    pub fn get_tracker(&self) -> &TrackerData {
+        &self.tracker
     }
 
     pub fn send_packet(&mut self, pkt: client::PacketType) {
@@ -63,7 +70,7 @@ impl Client {
     }
     
     pub fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, &str> {
-        if let Some(a) = self.clients.get(&t) {
+        if let Some(_) = self.clients.get(&t) {
             return Result::Err("Client type already exists!");
         }
         let entry = self.clients.entry(t);
@@ -96,7 +103,7 @@ impl Client {
             server::PacketType::ResetReason(_, _) => todo!(),
             server::PacketType::SensorInfo(_, _, _) => todo!(),
             server::PacketType::Rotation2(_, q) => self.update_rotation(1, q),
-            server::PacketType::RotationData(_, i, t) => todo!(),
+            server::PacketType::RotationData(_, _, _) => todo!(),
             server::PacketType::MagnetometerAccuracy(_, _, _) => todo!(),
         }
     }
