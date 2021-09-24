@@ -127,6 +127,9 @@ mod parse_tests {
 		}
 
 		assert_encoded_is_equal(&buf, &parsed_packet);
+
+		let failure = super::super::super::client::parse_buf(&mut buf);
+		assert_eq!(failure, None, "Parsing the server handshake packet in client should fail");
 	}
 	
 	#[test]
@@ -185,6 +188,9 @@ mod parse_tests {
 		}
 
 		assert_encoded_is_equal(&buf, &parsed_packet);
+
+		let failure = super::super::super::client::parse_buf(&mut buf);
+		assert_eq!(failure, None, "Parsing the server handshake packet in client should fail");
 	}
 
 	#[test]

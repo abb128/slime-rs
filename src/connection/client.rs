@@ -5,42 +5,102 @@ use crate::tracker::TrackerData;
 
 use super::backends::enums::*;
 
-#[derive(Debug)]
-pub struct Client {
-    clients: HashMap<BackendType, Box<dyn BackendRemoteData>>,
-    outgoing_buf: Vec<client::PacketType>,
 
-    tracker: TrackerData,
+pub trait ClientsContainer {
+    fn find_client_type_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>>;
+    fn find_client_type<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>>;
+    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, &str>;
+}
+
+pub trait PacketBuffered {
+    fn send_packet(&mut self, pkt: Vec<u8>);
+    fn get_outgoing_packets(&self) -> &Vec<Vec<u8>>;
+    fn clear_outgoing(&mut self);
+}
+
+
+#[derive(Debug)]
+pub struct RemoteClient {
+    clients: HashMap<BackendType, Box<dyn BackendRemoteData>>,
+    outgoing_buf: Vec<Vec<u8>>,
     mac: MacAddress
 }
 
+
+
+impl RemoteClient {
+    pub fn new(mac: MacAddress) -> RemoteClient {
+        RemoteClient {
+            clients: Default::default(),
+            outgoing_buf: Default::default(),
+            mac
+        }
+    }
+
+}
+
+impl PacketBuffered for RemoteClient {
+    fn send_packet(&mut self, pkt: Vec<u8>) {
+        self.outgoing_buf.push(pkt);
+    }
+    
+    fn get_outgoing_packets(&self) -> &Vec<Vec<u8>> {
+        &self.outgoing_buf
+    }
+    
+    fn clear_outgoing(&mut self) {
+        self.outgoing_buf.clear();
+    }
+}
+
+impl ClientsContainer for RemoteClient {
+    fn find_client_type_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>> {
+        Some(self.clients.get_mut(ctype)?.get_data_mut())
+    }
+
+    fn find_client_type<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>> {
+        Some(self.clients.get(ctype)?.get_data())
+    }
+    
+    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, &str> {
+        if let Some(_) = self.clients.get(&t) {
+            return Result::Err("Client type already exists!");
+        }
+        let entry = self.clients.entry(t);
+        
+        return Ok(entry.or_insert(d));
+    }
+}
+
+
+// A client (phone, tracker) that connects to the SlimeVR server
+// Sends server::PacketType to us
+// We send client::PacketType to them
+#[derive(Debug)]
+pub struct Client {
+    remote: RemoteClient,
+    tracker: TrackerData
+}
+
 // TOOD: Send heartbeat
-// TODO: Allow server::PacketType
 
 impl Client {
     pub fn new(data: &types::HandshakeData) -> Client {
         Client {
-            clients: Default::default(),
             tracker: TrackerData::default(),
-            outgoing_buf: Default::default(),
-            mac: data.mac_address.clone()
+            remote: RemoteClient::new(data.mac_address.clone())
         }
     }
 
-    pub fn get_tracker(&self) -> &TrackerData {
-        &self.tracker
+    pub fn send_packet(&mut self, pkt: &client::PacketType) {
+        if let Some(bytes) = client::to_bytes(pkt) {
+            self.remote.send_packet(bytes);
+        }
     }
 
-    pub fn send_packet(&mut self, pkt: client::PacketType) {
-        self.outgoing_buf.push(pkt);
-    }
-    
-    pub fn get_outgoing_packets(&self) -> &Vec<client::PacketType> {
-        &self.outgoing_buf
-    }
-    
-    pub fn clear_outgoing(&mut self) {
-        self.outgoing_buf.clear();
+
+    pub fn get_tracker(&self) -> &TrackerData {
+        &self.tracker
     }
 
     pub fn handle_handshake(&mut self, _h: types::HandshakeData) {
@@ -50,7 +110,7 @@ impl Client {
             }
         );
 
-        self.send_packet(response);
+        self.send_packet(&response);
     }
 
     fn update_rotation(&mut self, id: SensorID, quat: Quaternion){
@@ -59,23 +119,6 @@ impl Client {
 
     fn update_heartbeat_time(&mut self) {
         self.tracker.last_heartbeat = SystemTime::now();
-    }
-
-    pub fn find_client_type_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>> {
-        Some(self.clients.get_mut(ctype)?.get_data_mut())
-    }
-
-    pub fn find_client_type<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>> {
-        Some(self.clients.get(ctype)?.get_data())
-    }
-    
-    pub fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, &str> {
-        if let Some(_) = self.clients.get(&t) {
-            return Result::Err("Client type already exists!");
-        }
-        let entry = self.clients.entry(t);
-        
-        return Ok(entry.or_insert(d));
     }
 
     pub fn receive_packet(&mut self, pkt: server::PacketType) {
@@ -109,4 +152,80 @@ impl Client {
     }
 }
 
+impl ClientsContainer for Client {
+    fn find_client_type_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>> {
+        self.remote.find_client_type_mut(ctype)
+    }
 
+    fn find_client_type<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>> {
+        self.remote.find_client_type(ctype)
+    }
+
+    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, &str> {
+        self.remote.insert_client_type(t, d)
+    }
+}
+
+impl PacketBuffered for Client {
+    fn send_packet(&mut self, pkt: Vec<u8>) {
+        self.remote.send_packet(pkt)
+    }
+
+    fn get_outgoing_packets(&self) -> &Vec<Vec<u8>> {
+        self.remote.get_outgoing_packets()
+    }
+
+    fn clear_outgoing(&mut self) {
+        self.remote.clear_outgoing()
+    }
+}
+
+
+
+
+#[derive(Debug)]
+pub enum RemoteClientWrapper {
+    Client(Client)
+}
+
+impl RemoteClientWrapper {
+    fn get_remote_client(&self) -> &RemoteClient {
+        match self {
+            RemoteClientWrapper::Client(client) => &client.remote
+        }
+    }
+
+    fn get_remote_client_mut(&mut self) -> &mut RemoteClient {
+        match self {
+            RemoteClientWrapper::Client(client) => &mut client.remote
+        }
+    }
+}
+
+impl ClientsContainer for RemoteClientWrapper {
+    fn find_client_type_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>> {
+        self.get_remote_client_mut().find_client_type_mut(ctype)
+    }
+
+    fn find_client_type<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>> {
+        self.get_remote_client().find_client_type(ctype)
+    }
+
+    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, &str> {
+        self.get_remote_client_mut().insert_client_type(t, d)
+    }
+}
+
+impl PacketBuffered for RemoteClientWrapper {
+    fn send_packet(&mut self, pkt: Vec<u8>) {
+        self.get_remote_client_mut().send_packet(pkt)
+    }
+
+    fn get_outgoing_packets(&self) -> &Vec<Vec<u8>> {
+        self.get_remote_client().get_outgoing_packets()
+    }
+
+    fn clear_outgoing(&mut self) {
+        self.get_remote_client_mut().clear_outgoing()
+    }
+}

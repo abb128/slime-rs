@@ -8,7 +8,7 @@ mod types;
 
 use std::time::SystemTime;
 
-use connection::backends::udp::UdpServer;
+use connection::{backends::udp::UdpServer, client::RemoteClientWrapper};
 
 use crate::connection::{listener::*};
 
@@ -35,7 +35,9 @@ fn main() -> std::io::Result<()> {
         if curr_print.duration_since(last_print).unwrap().as_millis() > 500 {
             let mut i = 0;
             for client in collection.clients() {
-                println!("[{}]: {:?}", i, client.get_tracker().sensors);
+                if let RemoteClientWrapper::Client(client) = client {
+                    println!("[{}]: {:?}", i, client.get_tracker().sensors);
+                }
                 i = i + 1;
             }
 

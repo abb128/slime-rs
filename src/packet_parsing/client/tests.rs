@@ -53,6 +53,10 @@ mod parse_tests {
 		);
 		assert_encoded_is_equal(&buf, &parsed_packet);
 		assert_encoded_is_equal(&buf, &parsed_packet2);
+
+
+		let failure = super::super::super::server::parse_buf(&mut buf);
+		assert_eq!(failure, None, "Parsing the client handshake packet in server should fail");
 	}
 
 

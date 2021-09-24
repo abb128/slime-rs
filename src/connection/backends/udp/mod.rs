@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Debug, net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket}};
 
-use crate::{connection::{client::Client, listener::{Listener, RemoteMap}}, packet_parsing::{server, client, types::{HandshakeData, MacAddress}}};
+use crate::{connection::{client::{Client, ClientsContainer, PacketBuffered, RemoteClientWrapper}, listener::{Listener, RemoteMap}}, packet_parsing::{server, client, types::{HandshakeData, MacAddress}}};
 use std::time::SystemTime;
 
 use super::enums::{BackendDataMutRef, BackendDataRef, BackendRemoteData, BackendType};
@@ -75,6 +75,15 @@ impl UdpServer {
     }
 
     pub fn receive_packet(&mut self, size: usize, addr: SocketAddr, client_map: &mut RemoteMap) -> Option<()> {
+        // TODO: We need to check if we have the client addr in our map already. If yes, then parse according to the type of client there. If not, try server::parse_slice and fall back to client::parse_slice
+        
+        
+        if let Some(client) = client_map.get_mut(mac) {
+            if let RemoteClientWrapper::Client(client) = client {
+
+            }
+        }
+        
         let dec = server::parse_slice(&self.buf[0..size])?;
 
         if let server::PacketType::Handshake(_, mut dat) = dec {
@@ -96,28 +105,34 @@ impl UdpServer {
             let client = Client::new(&dat);
             
             // Insert to hashmap
-            let c = client_map.entry(mac_key).or_insert(client);
+            let c = client_map.entry(mac_key).or_insert(RemoteClientWrapper::Client(client));
 
-            // Insert UdpClient into c
-            let udp_client = UdpClient {
-                srv_addr: self.local_addr,
-                last_addr: addr,
-                last_activity: SystemTime::now()
-            };
-            let insert_result = c.insert_client_type(BackendType::Udp(self.local_addr), Box::new(udp_client));
-            if let Err(msg) = insert_result {
-                println!("Failed to insert client: {}", msg);
+            // Make sure we actually have a client..
+            if let RemoteClientWrapper::Client(c) = c {
+                // Insert UdpClient into c
+                let udp_client = UdpClient {
+                    srv_addr: self.local_addr,
+                    last_addr: addr,
+                    last_activity: SystemTime::now()
+                };
+                let insert_result = c.insert_client_type(BackendType::Udp(self.local_addr), Box::new(udp_client));
+                if let Err(msg) = insert_result {
+                    println!("Failed to insert client: {}", msg);
+                }
+
+                // now notify client so it can respond
+                c.handle_handshake(dat);
             }
 
-            // now notify client so it can respond
-            c.handle_handshake(dat);
         } else if let Some(mac) = self.addr_to_mac.get(&addr) {
             if let Some(client) = client_map.get_mut(mac) {
-                client.receive_packet(dec);
-                
-                if let Some(udp) = self.get_udp_client_mut(client) {
-                    udp.last_addr = addr;
-                    udp.last_activity = SystemTime::now();
+                if let RemoteClientWrapper::Client(client) = client {
+                    client.receive_packet(dec);
+                    
+                    if let Some(udp) = self.get_udp_client_mut(client) {
+                        udp.last_addr = addr;
+                        udp.last_activity = SystemTime::now();
+                    }
                 }
             }
         }
@@ -141,27 +156,25 @@ impl Listener for UdpServer {
 
     fn flush(&mut self, client_map: &mut RemoteMap) {
         for (_, client) in client_map.iter_mut() {
-            let outgoing = client.get_outgoing_packets();
-            if outgoing.len() == 0 { continue; }
-            
-            if let Some(udp) = self.get_udp_client(client) {
-                if udp.srv_addr != self.local_addr {
-                    println!("MISMATCH!!");
-                    continue;
-                }
+            if let RemoteClientWrapper::Client(client) = client {
+                let outgoing = client.get_outgoing_packets();
+                if outgoing.len() == 0 { continue; }
+                
+                if let Some(udp) = self.get_udp_client(client) {
+                    if udp.srv_addr != self.local_addr {
+                        println!("MISMATCH!!");
+                        continue;
+                    }
 
-                for packet in outgoing {
-                    // TODO: would be more efficient to only encode once, than per every client
-                    let encoded = client::to_bytes(packet);
-                    if let Some(bytes) = encoded {
-                        let result = self.socket.send_to(bytes.as_slice(), udp.last_addr);
-                        if let Err(v) = result { // TODO: prettier error handling
-                                                       // TODO: dont remove this packet, retry next time around
-                                                       // TODO: kill connection if never gets through? for example it might have disconnected from wifi, related to TODO 1
-                            println!("Failed to send packet: {}", v);
-                        }else if let Ok(v) = result {
-                            println!("Send {} packets to {}! (from {})", v, udp.last_addr, self.local_addr);
-                        }
+                    for packet in outgoing {
+                            let result = self.socket.send_to(packet.as_slice(), udp.last_addr);
+                            if let Err(v) = result { // TODO: prettier error handling
+                                                        // TODO: dont remove this packet, retry next time around
+                                                        // TODO: kill connection if never gets through? for example it might have disconnected from wifi, related to TODO 1
+                                println!("Failed to send packet: {}", v);
+                            }else if let Ok(v) = result {
+                                println!("Send {} packets to {}! (from {})", v, udp.last_addr, self.local_addr);
+                            }
                     }
                 }
             }

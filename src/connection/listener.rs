@@ -4,9 +4,7 @@ use crate::packet_parsing::types::MacAddress;
 use super::client::*;
 
 
-trait Remote {}
-
-pub type RemoteMap = HashMap<MacAddress, Client>;
+pub type RemoteMap = HashMap<MacAddress, RemoteClientWrapper>;
 
 #[derive(Default)]
 pub struct ListenerCollection {
@@ -20,7 +18,7 @@ pub trait Listener {
 }
 
 impl ListenerCollection {
-    pub fn clients(&mut self) -> std::collections::hash_map::Values<'_, MacAddress, Client> {
+    pub fn clients(&mut self) -> std::collections::hash_map::Values<'_, MacAddress, RemoteClientWrapper> {
         let values = self.remotes.values().into_iter();
         return values;
     }
