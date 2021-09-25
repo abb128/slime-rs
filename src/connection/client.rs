@@ -1,5 +1,5 @@
 use std::{collections::HashMap};
-use crate::packet_parsing::{client, server, types::{self, MacAddress, Quaternion, SensorID}};
+use crate::packet_parsing::{client::{self, ClientHandshake}, server, types::{self, FirmwareString, HandshakeData, ImuInfo, MacAddress, Quaternion, SensorID}};
 use std::time::{SystemTime};
 use crate::tracker::TrackerData;
 
@@ -183,21 +183,107 @@ impl PacketBuffered for Client {
 
 
 
+// A client (phone, tracker) that connects to the SlimeVR server
+// Sends client::PacketType to us
+// We send server::PacketType to them
+// TODO: proper implementation
+// TODO: have heartbeat
+#[derive(Debug)]
+pub struct Server {
+    remote: RemoteClient,
+}
+
+impl Server {
+    pub fn new(mac: MacAddress) -> Server {
+        return Server { remote: RemoteClient::new(mac) }
+    }
+
+    pub fn send_packet(&mut self, pkt: &server::PacketType) {
+        if let Some(bytes) = server::to_bytes(pkt) {
+            self.remote.send_packet(bytes);
+        }
+    }
+
+    pub fn receive_packet(&mut self, pkt: client::PacketType) {
+        match pkt {
+            client::PacketType::Handshake(h) => println!("{:?}", h),
+            client::PacketType::Other(o) => todo!(),
+        }
+    }
+
+    pub fn do_handshake(&mut self) {
+        let req = server::PacketType::Handshake(
+            0,
+
+            // TODO: some way to get this data so we dont just provide invalid
+            HandshakeData {
+                board_type: 0,
+                imu_type: 0,
+                mcu_type: 0,
+                imu_info: ImuInfo(0, 0, 0),
+                firmware_build: 0,
+                firmware: FirmwareString::default(),
+                mac_address: MacAddress(0, 0, 0, 0, 0, 0)
+            }
+        );
+
+        self.send_packet(&req);
+    }
+
+    pub fn handle_handshake(&mut self, hnd: ClientHandshake) {
+        println!("Server handshake, version {}", hnd.version);
+    }
+}
+
+impl ClientsContainer for Server {
+    fn find_client_type_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>> {
+        self.remote.find_client_type_mut(ctype)
+    }
+
+    fn find_client_type<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>> {
+        self.remote.find_client_type(ctype)
+    }
+
+    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, &str> {
+        self.remote.insert_client_type(t, d)
+    }
+}
+
+impl PacketBuffered for Server {
+    fn send_packet(&mut self, pkt: Vec<u8>) {
+        self.remote.send_packet(pkt)
+    }
+
+    fn get_outgoing_packets(&self) -> &Vec<Vec<u8>> {
+        self.remote.get_outgoing_packets()
+    }
+
+    fn clear_outgoing(&mut self) {
+        self.remote.clear_outgoing()
+    }
+}
+
+
+
+
 #[derive(Debug)]
 pub enum RemoteClientWrapper {
-    Client(Client)
+    Client(Client),
+    Server(Server)
 }
 
 impl RemoteClientWrapper {
     fn get_remote_client(&self) -> &RemoteClient {
         match self {
-            RemoteClientWrapper::Client(client) => &client.remote
+            RemoteClientWrapper::Client(client) => &client.remote,
+            RemoteClientWrapper::Server(server) => &server.remote
         }
     }
 
     fn get_remote_client_mut(&mut self) -> &mut RemoteClient {
         match self {
-            RemoteClientWrapper::Client(client) => &mut client.remote
+            RemoteClientWrapper::Client(client) => &mut client.remote,
+            RemoteClientWrapper::Server(server) => &mut server.remote
         }
     }
 }

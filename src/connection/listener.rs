@@ -1,15 +1,15 @@
-use std::{collections::HashMap};
+use std::{any::Any, collections::HashMap};
 use crate::packet_parsing::types::MacAddress;
 
-use super::client::*;
+use super::{backends::enums::BackendListener, client::*};
 
 
 pub type RemoteMap = HashMap<MacAddress, RemoteClientWrapper>;
 
 #[derive(Default)]
 pub struct ListenerCollection {
-    listeners: Vec<Box<dyn Listener>>,
-    remotes: RemoteMap
+    pub listeners: Vec<BackendListener>,
+    pub remotes: RemoteMap
 }
 
 pub trait Listener {
@@ -18,8 +18,13 @@ pub trait Listener {
 }
 
 impl ListenerCollection {
-    pub fn clients(&mut self) -> std::collections::hash_map::Values<'_, MacAddress, RemoteClientWrapper> {
+    pub fn clients(&self) -> std::collections::hash_map::Values<'_, MacAddress, RemoteClientWrapper> {
         let values = self.remotes.values().into_iter();
+        return values;
+    }
+
+    pub fn clients_mut(&mut self) -> std::collections::hash_map::ValuesMut<'_, MacAddress, RemoteClientWrapper> {
+        let values = self.remotes.values_mut().into_iter();
         return values;
     }
 
@@ -39,7 +44,7 @@ impl ListenerCollection {
         }
     }
 
-    pub fn add_server(&mut self, server: Box<dyn Listener>) {
+    pub fn add_server(&mut self, server: BackendListener) {
         self.listeners.push(server);
     }
 }
