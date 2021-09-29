@@ -1,3 +1,5 @@
+mod tests;
+
 use std::{collections::HashMap, fmt::Debug, net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket}};
 
 use crate::{connection::{remote_client::{Client, BDataContainer, PacketBuffered, RemoteClientWrapper, Server}, listener::{Listener, RemoteMap}}, packet_parsing::{client::{self, ClientHandshake}, server, types::{HandshakeData, MacAddress}}};
