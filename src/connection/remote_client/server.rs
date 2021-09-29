@@ -63,17 +63,17 @@ impl Server {
     }
 }
 
-impl ClientsContainer for Server {
-    fn find_client_type_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>> {
-        self.remote.find_client_type_mut(ctype)
+impl BDataContainer for Server {
+    fn find_bdata_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>> {
+        self.remote.find_bdata_mut(ctype)
     }
 
-    fn find_client_type<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>> {
-        self.remote.find_client_type(ctype)
+    fn find_bdata<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>> {
+        self.remote.find_bdata(ctype)
     }
 
-    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, ClientInsertionFailure> {
-        self.remote.insert_client_type(t, d)
+    fn insert_bdata(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, BDataInsertionFailure> {
+        self.remote.insert_bdata(t, d)
     }
 }
 

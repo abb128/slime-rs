@@ -35,7 +35,8 @@ impl Listener for BackendListener {
 
 
 // BackendData contains arbitrary state info necessary for listeners to
-// communicate with clients. For example, might contain the UDP socket address
+// communicate with clients. For example, might contain the UDP socket address.
+// BData is short for BackendData
 
 #[derive(Debug)]
 pub enum BackendDataMutRef<'a> {

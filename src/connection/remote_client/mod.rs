@@ -22,14 +22,14 @@ use crate::packet_parsing::types::*;
 use std::{collections::HashMap};
 
 #[derive(Debug)]
-pub enum ClientInsertionFailure {
+pub enum BDataInsertionFailure {
     AlreadyExists
 }
 
-pub trait ClientsContainer {
-    fn find_client_type_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>>;
-    fn find_client_type<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>>;
-    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, ClientInsertionFailure>;
+pub trait BDataContainer {
+    fn find_bdata_mut<'a>(&'a mut self, btype: &BackendType) -> Option<BackendDataMutRef<'a>>;
+    fn find_bdata<'a>(&'a self, btype: &BackendType) -> Option<BackendDataRef<'a>>;
+    fn insert_bdata(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, BDataInsertionFailure>;
 }
 
 pub trait PacketBuffered {
@@ -73,18 +73,18 @@ impl PacketBuffered for RemoteClient {
     }
 }
 
-impl ClientsContainer for RemoteClient {
-    fn find_client_type_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>> {
+impl BDataContainer for RemoteClient {
+    fn find_bdata_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>> {
         Some(self.clients.get_mut(ctype)?.get_data_mut())
     }
 
-    fn find_client_type<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>> {
+    fn find_bdata<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>> {
         Some(self.clients.get(ctype)?.get_data())
     }
     
-    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, ClientInsertionFailure> {
+    fn insert_bdata(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, BDataInsertionFailure> {
         if let Some(_) = self.clients.get(&t) {
-            return Err(ClientInsertionFailure::AlreadyExists);
+            return Err(BDataInsertionFailure::AlreadyExists);
         }
         let entry = self.clients.entry(t);
         
@@ -125,17 +125,17 @@ impl RemoteClientContainer for RemoteClientWrapper {
 }
 
 
-impl ClientsContainer for RemoteClientWrapper {
-    fn find_client_type_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>> {
-        self.get_remote_client_mut().find_client_type_mut(ctype)
+impl BDataContainer for RemoteClientWrapper {
+    fn find_bdata_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>> {
+        self.get_remote_client_mut().find_bdata_mut(ctype)
     }
 
-    fn find_client_type<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>> {
-        self.get_remote_client().find_client_type(ctype)
+    fn find_bdata<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>> {
+        self.get_remote_client().find_bdata(ctype)
     }
 
-    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, ClientInsertionFailure> {
-        self.get_remote_client_mut().insert_client_type(t, d)
+    fn insert_bdata(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, BDataInsertionFailure> {
+        self.get_remote_client_mut().insert_bdata(t, d)
     }
 }
 

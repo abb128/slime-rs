@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Debug, net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket}};
 
-use crate::{connection::{remote_client::{Client, ClientsContainer, PacketBuffered, RemoteClientWrapper, Server}, listener::{Listener, RemoteMap}}, packet_parsing::{client::{self, ClientHandshake}, server, types::{HandshakeData, MacAddress}}};
+use crate::{connection::{remote_client::{Client, BDataContainer, PacketBuffered, RemoteClientWrapper, Server}, listener::{Listener, RemoteMap}}, packet_parsing::{client::{self, ClientHandshake}, server, types::{HandshakeData, MacAddress}}};
 use std::time::SystemTime;
 
 use super::enums::{BackendDataMutRef, BackendDataRef, BackendRemoteData, BackendType};
@@ -41,7 +41,7 @@ impl UdpServer {
             last_activity: SystemTime::now()
         };
 
-        let insert_result = client.insert_client_type(BackendType::Udp(self.local_addr), Box::new(udp_client));
+        let insert_result = client.insert_bdata(BackendType::Udp(self.local_addr), Box::new(udp_client));
         
         if let Ok(result) = insert_result {
             let data = result.get_data_mut();
@@ -119,9 +119,9 @@ impl UdpServer {
         }
     }
 
-    fn get_udp_client_mut<'a, T: ClientsContainer>(&self, rc: &'a mut T) -> Option<&'a mut UdpClient> {
+    fn get_udp_client_mut<'a, T: BDataContainer>(&self, rc: &'a mut T) -> Option<&'a mut UdpClient> {
         if let Some(BackendDataMutRef::Udp(udp))
-        = rc.find_client_type_mut(&BackendType::Udp(self.local_addr))
+        = rc.find_bdata_mut(&BackendType::Udp(self.local_addr))
         {
             return Some(udp);
         }
@@ -129,9 +129,9 @@ impl UdpServer {
         return None;
     }
 
-    fn get_udp_client<'a, T: ClientsContainer>(&self, rc: &'a T) -> Option<&'a UdpClient> {
+    fn get_udp_client<'a, T: BDataContainer>(&self, rc: &'a T) -> Option<&'a UdpClient> {
         if let Some(BackendDataRef::Udp(udp))
-        = rc.find_client_type(&BackendType::Udp(self.local_addr))
+        = rc.find_bdata(&BackendType::Udp(self.local_addr))
         {
             return Some(udp);
         }
