@@ -75,40 +75,6 @@ impl UdpServer {
             return None;
     }
 
-    fn handle_server2client_handshake(&mut self, mut dat: ClientHandshake, size: usize, addr: SocketAddr, client_map: &mut RemoteMap) -> Option<()> {
-        // Generate fake MAC address since we don't have it
-        let mac = gen_pseudomac(&addr);
-
-        // Insert socketaddr to mac mapping
-        self.addr_to_mac.insert(addr, mac.clone());
-
-        // Create client
-        let mac_key = mac.clone();
-        let server = Server::new(mac);
-        
-        // Insert to hashmap
-        let c = client_map.entry(mac_key).or_insert(RemoteClientWrapper::Server(server));
-
-        // Make sure we actually have a server..
-        if let RemoteClientWrapper::Server(c) = c {
-            // Insert UdpClient into c
-            let udp_client = UdpClient {
-                srv_addr: self.local_addr,
-                last_addr: addr,
-                last_activity: SystemTime::now()
-            };
-            let insert_result = c.insert_client_type(BackendType::Udp(self.local_addr), Box::new(udp_client));
-            if let Err(msg) = insert_result {
-                println!("Failed to insert client: {}", msg);
-            }
-
-            // now notify client so it can respond
-            c.handle_handshake(dat);
-        }
-
-        return None;
-    }
-
     pub fn connect_to_server(&mut self, addr: SocketAddr, client_map: &mut RemoteMap){
         // Generate fake MAC address since we don't have it
         let mac = gen_pseudomac(&addr);
@@ -204,15 +170,10 @@ impl UdpServer {
             }
         }else{
             let server_attempt = server::parse_slice(&self.buf[0..size]);
-            let client_attempt = client::parse_slice(&self.buf[0..size]);
 
             if let Some(a) = server_attempt {
                 if let server::PacketType::Handshake(_, dat) = a {
                     self.handle_client2server_handshake(dat, size, addr, client_map);
-                }
-            }else if let Some(b) = client_attempt {
-                if let client::PacketType::Handshake(dat) = b {
-                    self.handle_server2client_handshake(dat, size, addr, client_map);
                 }
             }
 
