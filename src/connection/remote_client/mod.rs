@@ -21,11 +21,15 @@ use super::backends::enums::*;
 use crate::packet_parsing::types::*;
 use std::{collections::HashMap};
 
+#[derive(Debug)]
+pub enum ClientInsertionFailure {
+    AlreadyExists
+}
 
 pub trait ClientsContainer {
     fn find_client_type_mut<'a>(&'a mut self, ctype: &BackendType) -> Option<BackendDataMutRef<'a>>;
     fn find_client_type<'a>(&'a self, ctype: &BackendType) -> Option<BackendDataRef<'a>>;
-    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, &str>;
+    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, ClientInsertionFailure>;
 }
 
 pub trait PacketBuffered {
@@ -78,9 +82,9 @@ impl ClientsContainer for RemoteClient {
         Some(self.clients.get(ctype)?.get_data())
     }
     
-    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, &str> {
+    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, ClientInsertionFailure> {
         if let Some(_) = self.clients.get(&t) {
-            return Result::Err("Client type already exists!");
+            return Err(ClientInsertionFailure::AlreadyExists);
         }
         let entry = self.clients.entry(t);
         
@@ -130,7 +134,7 @@ impl ClientsContainer for RemoteClientWrapper {
         self.get_remote_client().find_client_type(ctype)
     }
 
-    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, &str> {
+    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, ClientInsertionFailure> {
         self.get_remote_client_mut().insert_client_type(t, d)
     }
 }

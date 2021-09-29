@@ -38,9 +38,7 @@ impl Client {
 
     pub fn handle_handshake(&mut self, _h: HandshakeData) {
         let response = client::PacketType::Handshake(
-            client::ClientHandshake {
-                version: '5' as u8
-            }
+            client::ClientHandshake::with_version(5u8)
         );
 
         self.send_packet(&response);
@@ -94,7 +92,7 @@ impl ClientsContainer for Client {
         self.remote.find_client_type(ctype)
     }
 
-    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, &str> {
+    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, ClientInsertionFailure> {
         self.remote.insert_client_type(t, d)
     }
 }

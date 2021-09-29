@@ -34,75 +34,88 @@ fn ensure_pseudomac(data: &mut HandshakeData, addr: &SocketAddr) {
 }
 
 impl UdpServer {
+    fn insert_udp_wrapper<'a>(&self, addr: SocketAddr, client: &'a mut RemoteClientWrapper) -> Option<&'a mut UdpClient>{
+        let udp_client = UdpClient {
+            srv_addr: self.local_addr,
+            last_addr: addr,
+            last_activity: SystemTime::now()
+        };
+
+        let insert_result = client.insert_client_type(BackendType::Udp(self.local_addr), Box::new(udp_client));
+        
+        if let Ok(result) = insert_result {
+            let data = result.get_data_mut();
+
+            if let BackendDataMutRef::Udp(udp ) = data {
+                return Some(udp);
+            }else{
+                panic!("Inserted a Udp backendtype, received a different one");
+            }
+        }
+        
+        return None;
+    }
+
     fn handle_client2server_handshake(&mut self, mut dat: HandshakeData, size: usize, addr: SocketAddr, client_map: &mut RemoteMap) -> Option<()> {
-            // If out-of-date handshake is used, skip
-            if size == 12 {
-                return None;
-            }
-
-            // Create new client, insert to addr_to_mac
-            
-            // Ensure mac address is not blank (iOS owoTrack, old Android app)
-            ensure_pseudomac(&mut dat, &addr);
-
-            // Insert socketaddr to mac mapping
-            self.addr_to_mac.insert(addr, dat.mac_address.clone());
-
-            // Create client
-            let mac_key = dat.mac_address.clone();
-            let client = Client::new(&dat);
-            
-            // Insert to hashmap
-            let c = client_map.entry(mac_key).or_insert(RemoteClientWrapper::Client(client));
-
-            // Make sure we actually have a client..
-            if let RemoteClientWrapper::Client(c) = c {
-                // Insert UdpClient into c
-                let udp_client = UdpClient {
-                    srv_addr: self.local_addr,
-                    last_addr: addr,
-                    last_activity: SystemTime::now()
-                };
-                let insert_result = c.insert_client_type(BackendType::Udp(self.local_addr), Box::new(udp_client));
-                if let Err(msg) = insert_result {
-                    println!("Failed to insert client: {}", msg);
-                }
-
-                // now notify client so it can respond
-                c.handle_handshake(dat);
-            }
-
+        // If out-of-date handshake is used, skip
+        if size == 12 {
             return None;
+        }
+    
+        // Ensure mac address is not blank (iOS owoTrack, old Android app)
+        ensure_pseudomac(&mut dat, &addr);
+
+        // Insert socketaddr to mac mapping
+        self.addr_to_mac.insert(addr, dat.mac_address.clone());
+
+        // Create client
+        let mac_key = dat.mac_address.clone();
+        let client = Client::new(&dat);
+            
+        // Insert to hashmap
+        let wrap: &mut RemoteClientWrapper = client_map.entry(mac_key).or_insert(RemoteClientWrapper::Client(client));
+
+        // Insert UdpClient into wrapper
+        if let Some(udp) = self.insert_udp_wrapper(addr, wrap){
+        
+        }else{
+            println!("Failed to insert UdpClient..");
+        }
+            
+        // Make sure we actually have a client..
+        if let RemoteClientWrapper::Client(c) = wrap {
+            // now notify client so it can respond
+            c.handle_handshake(dat);
+        }
+
+        return None;
     }
 
     pub fn connect_to_server(&mut self, addr: SocketAddr, client_map: &mut RemoteMap){
-        // Generate fake MAC address since we don't have it
+        // Generate fake MAC address since we don't have it.
+        // TODO: We should avoid doing this
         let mac = gen_pseudomac(&addr);
 
         // Insert socketaddr to mac mapping
         self.addr_to_mac.insert(addr, mac.clone());
 
-        // Create client
+        // Create server
         let mac_key = mac.clone();
         let server = Server::new(mac);
         
         // Insert to hashmap
-        let c = client_map.entry(mac_key).or_insert(RemoteClientWrapper::Server(server));
+        let wrap = client_map.entry(mac_key).or_insert(RemoteClientWrapper::Server(server));
+
+        // Insert UdpClient into wrapper
+        if let Some(udp) = self.insert_udp_wrapper(addr, wrap){
+        
+        }else{
+            println!("Failed to insert UdpClient..");
+        }
 
         // Make sure we actually have a server..
-        if let RemoteClientWrapper::Server(c) = c {
-            // Insert UdpClient into c
-            let udp_client = UdpClient {
-                srv_addr: self.local_addr,
-                last_addr: addr,
-                last_activity: SystemTime::now()
-            };
-            let insert_result = c.insert_client_type(BackendType::Udp(self.local_addr), Box::new(udp_client));
-            if let Err(msg) = insert_result {
-                println!("Failed to insert client: {}", msg);
-            }
-
-            c.do_handshake();
+        if let RemoteClientWrapper::Server(s) = wrap {
+            s.send_handshake_to_server();
         }
     }
 

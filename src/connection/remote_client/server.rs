@@ -27,7 +27,7 @@ impl Server {
 
     pub fn receive_packet(&mut self, pkt: client::PacketType) {
         match pkt {
-            client::PacketType::Handshake(h) => println!("{:?}", h),
+            client::PacketType::Handshake(hnd) => self.handle_handshake(hnd),
             client::PacketType::Other(o) => match o {
                 client::OPacketType::Heartbeat(_) => todo!(),
                 client::OPacketType::Vibrate(_) => todo!(),
@@ -39,7 +39,7 @@ impl Server {
         }
     }
 
-    pub fn do_handshake(&mut self) {
+    pub fn send_handshake_to_server(&mut self) {
         let req = server::PacketType::Handshake(
             0,
 
@@ -59,7 +59,7 @@ impl Server {
     }
 
     pub fn handle_handshake(&mut self, hnd: client::ClientHandshake) {
-        println!("Server handshake, version {}", hnd.version);
+        println!("Server handshake, version {}", hnd.version - ('0' as u8));
     }
 }
 
@@ -72,7 +72,7 @@ impl ClientsContainer for Server {
         self.remote.find_client_type(ctype)
     }
 
-    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, &str> {
+    fn insert_client_type(&mut self, t: BackendType, d: Box<dyn BackendRemoteData>) -> Result<&mut Box<dyn BackendRemoteData>, ClientInsertionFailure> {
         self.remote.insert_client_type(t, d)
     }
 }

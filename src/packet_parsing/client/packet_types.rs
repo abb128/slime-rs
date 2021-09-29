@@ -1,3 +1,5 @@
+use crate::connection::remote_client::Client;
+
 use super::ids;
 use super::super::types::*;
 
@@ -9,6 +11,16 @@ use deku::prelude::*;
 #[deku(magic = b"Hey OVR =D ")]
 pub struct ClientHandshake {
     pub version: u8 // ASCII char
+}
+
+impl ClientHandshake {
+    pub fn get_version(&self) -> u8 { self.version - ('0' as u8) }
+    
+    pub fn with_version(version: u8) -> ClientHandshake {
+        ClientHandshake { 
+            version: version + ('0' as u8)
+        }
+    }
 }
 
 #[derive(PartialEq, Debug, DekuRead, DekuWrite)]
