@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Debug, net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket}};
 
-use crate::{connection::{client::{Client, ClientsContainer, PacketBuffered, RemoteClientWrapper, Server}, listener::{Listener, RemoteMap}}, packet_parsing::{client::{self, ClientHandshake}, server, types::{HandshakeData, MacAddress}}};
+use crate::{connection::{remote_client::{Client, ClientsContainer, PacketBuffered, RemoteClientWrapper, Server}, listener::{Listener, RemoteMap}}, packet_parsing::{client::{self, ClientHandshake}, server, types::{HandshakeData, MacAddress}}};
 use std::time::SystemTime;
 
 use super::enums::{BackendDataMutRef, BackendDataRef, BackendRemoteData, BackendType};

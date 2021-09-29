@@ -8,7 +8,7 @@ mod types;
 
 use std::{any::Any, env, net::SocketAddr, str::FromStr, time::SystemTime};
 
-use connection::{backends::{enums::BackendListener, udp::UdpServer}, client::RemoteClientWrapper};
+use connection::{backends::{enums::BackendListener, udp::UdpServer}, remote_client::RemoteClientWrapper};
 use types::Quaternion;
 
 use crate::{connection::{listener::*}, packet_parsing::server};
