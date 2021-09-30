@@ -119,7 +119,7 @@ mod udp_tests {
         let server_addr = SocketAddr::from_str("127.0.0.1:16003").unwrap();
         client_srv.connect_to_server(server_addr, &mut client_map);
 
-        client_srv.flush(&mut client_map);
+        assert_eq!(client_srv.flush(&mut client_map), 1, "Only 1 handshake packet should be sent at this point");
 
         assert!(ensure_received(&mut server_srv, &mut server_map, 1),
             "Connecting from local client to local server should succeed");
@@ -133,6 +133,7 @@ mod udp_tests {
         }
     }
 
+    // TODO: more generic test utilities for arbitrary backends rather than UDP only
     #[test]
     fn test_self_connection_send_rotation(){
         let mut client_srv = obtain_server(4);
@@ -145,7 +146,7 @@ mod udp_tests {
         client_srv.connect_to_server(server_addr, &mut client_map);
 
 
-        client_srv.flush(&mut client_map);
+        assert_eq!(client_srv.flush(&mut client_map), 1, "Only 1 handshake packet should be sent at this point");
 
         assert!(ensure_received(&mut server_srv, &mut server_map, 1),
             "Connecting from local client to local server should succeed");
@@ -162,7 +163,7 @@ mod udp_tests {
 
             let (_cli_mac, cli_server) = client_map.iter_mut().next().unwrap();
             cli_server.clear_outgoing();
-            
+
             if let RemoteClientWrapper::Server(s) = cli_server {
                 s.send_packet(&server::PacketType::Rotation(128 + i, tgt_quat));
             }else{
@@ -170,7 +171,7 @@ mod udp_tests {
             }
 
 
-            client_srv.flush(&mut client_map);
+            assert_eq!(client_srv.flush(&mut client_map), 1, "Only 1 rotation packet should be sent at this point");
             ensure_received(&mut server_srv, &mut server_map, 1);
 
             let (_srv_mac, srv_client) = server_map.iter_mut().next().unwrap();
