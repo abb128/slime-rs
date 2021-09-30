@@ -22,20 +22,22 @@ mod udp_tests {
         Default::default()
     }
 
-    fn ensure_received(srv: &mut UdpServer, map: &mut RemoteMap, tgt_map_len: usize) -> bool {
-        let mut connected = false;
+    fn ensure_received(srv: &mut UdpServer, map: &mut RemoteMap, tgt_packets: usize) -> bool {
+        let mut packet_count: usize = 0;
         for _ in 0..5 {
-            srv.receive(map);
-            if tgt_map_len != 0 && map.len() == tgt_map_len {
-                connected = true;
-                break;
+            packet_count += srv.receive(map);
+
+            if packet_count == tgt_packets {
+                return true;
+            }else if packet_count > tgt_packets {
+                panic!("Too many packets unexpectedly received, expected {}, got {}", tgt_packets, packet_count);
             }
 
             // Should be instant, but sleep just in case
             std::thread::sleep(time::Duration::from_millis(10));
         }
 
-        return connected;
+        return false;
     }
 
     #[test]
@@ -143,6 +145,13 @@ mod udp_tests {
         client_srv.connect_to_server(server_addr, &mut client_map);
 
 
+        client_srv.flush(&mut client_map);
+
+        assert!(ensure_received(&mut server_srv, &mut server_map, 1),
+            "Connecting from local client to local server should succeed");
+        
+        println!("Connected");
+
         for i in 0..16 {
             let tgt_quat = Quaternion {
                 x: 0.2 + (i as f32)/32.0,
@@ -151,23 +160,18 @@ mod udp_tests {
                 w: 1.5837 - (i as f32)/32.0
             };
 
-
-            client_srv.flush(&mut client_map);
-
-            assert!(ensure_received(&mut server_srv, &mut server_map, 1),
-                "Connecting from local client to local server should succeed");
-
-
             let (_cli_mac, cli_server) = client_map.iter_mut().next().unwrap();
+            cli_server.clear_outgoing();
+            
             if let RemoteClientWrapper::Server(s) = cli_server {
-                s.send_packet(&server::PacketType::Rotation(128, tgt_quat));
+                s.send_packet(&server::PacketType::Rotation(128 + i, tgt_quat));
             }else{
                 panic!("The server was meant to be connecting to a server, but found non-server");
             }
 
 
             client_srv.flush(&mut client_map);
-            ensure_received(&mut server_srv, &mut server_map, 0);
+            ensure_received(&mut server_srv, &mut server_map, 1);
 
             let (_srv_mac, srv_client) = server_map.iter_mut().next().unwrap();
 

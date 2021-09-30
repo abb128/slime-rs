@@ -20,13 +20,13 @@ pub enum BackendListener {
 
 
 impl Listener for BackendListener {
-    fn receive(&mut self, client_map: &mut crate::connection::listener::RemoteMap) {
+    fn receive(&mut self, client_map: &mut crate::connection::listener::RemoteMap) -> usize {
         match self {
             BackendListener::Udp(a) => a.receive(client_map)
         }
     }
 
-    fn flush(&mut self, client_map: &mut crate::connection::listener::RemoteMap) {
+    fn flush(&mut self, client_map: &mut crate::connection::listener::RemoteMap) -> usize {
         match self {
             BackendListener::Udp(a) => a.flush(client_map)
         }

@@ -13,8 +13,8 @@ pub struct ListenerCollection {
 }
 
 pub trait Listener {
-    fn receive(&mut self, client_map: &mut RemoteMap); // receives and processes incoming packets
-    fn flush(&mut self, client_map: &mut RemoteMap);   // flushes buffered outgoing packets
+    fn receive(&mut self, client_map: &mut RemoteMap) -> usize; // receives and processes incoming packets, returns number of received packets
+    fn flush(&mut self, client_map: &mut RemoteMap) -> usize;   // flushes buffered outgoing packets, returns number of packets sent
 }
 
 impl ListenerCollection {

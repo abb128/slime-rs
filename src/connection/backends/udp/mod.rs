@@ -200,42 +200,49 @@ impl UdpServer {
 }
 
 impl Listener for UdpServer {
-    fn receive(&mut self, client_map: &mut RemoteMap) {
+    fn receive(&mut self, client_map: &mut RemoteMap) -> usize {
+        let mut num_packets: usize = 0;
         loop {
             let r = self.socket.recv_from(&mut self.buf);
             match r {
                 Ok((size, addr)) => {
                     self.receive_packet(size, addr, client_map);
+                    num_packets += 1;
                 }
                 Err(_) => break
             }
         }
+
+        return num_packets;
     }
 
-    fn flush(&mut self, client_map: &mut RemoteMap) {
-        for (_, client) in client_map.iter_mut() {
-            //if let RemoteClientWrapper::Client(client) = client {
-                let outgoing = client.get_outgoing_packets();
-                if outgoing.len() == 0 { continue; }
-                
-                if let Some(udp) = self.get_udp_client(client) {
-                    if udp.srv_addr != self.local_addr {
-                        continue;
-                    }
+    fn flush(&mut self, client_map: &mut RemoteMap) -> usize {
+        let mut num_packets: usize = 0;
 
-                    for packet in outgoing {
-                            let result = self.socket.send_to(packet.as_slice(), udp.last_addr);
-                            if let Err(v) = result { // TODO: prettier error handling
-                                                        // TODO: dont remove this packet, retry next time around
-                                                        // TODO: kill connection if never gets through? for example it might have disconnected from wifi, related to TODO 1
-                                println!("Failed to send packet: {}", v);
-                            }else if let Ok(v) = result {
-                                println!("Send {} packets to {}! (from {})", v, udp.last_addr, self.local_addr);
-                            }
+        for (_, client) in client_map.iter_mut() {
+            let outgoing = client.get_outgoing_packets();
+            if outgoing.len() == 0 { continue; }
+                
+            if let Some(udp) = self.get_udp_client(client) {
+                if udp.srv_addr != self.local_addr {
+                    continue;
+                }
+
+                for packet in outgoing {
+                    let result = self.socket.send_to(packet.as_slice(), udp.last_addr);
+                    if let Err(v) = result { // TODO: prettier error handling
+                                                // TODO: dont remove this packet, retry next time around
+                                                // TODO: kill connection if never gets through? for example it might have disconnected from wifi, related to TODO 1
+                        println!("Failed to send packet: {}", v);
+                    }else if let Ok(v) = result {
+                        println!("Send {} size packet to {}! (from {})", v, udp.last_addr, self.local_addr);
+                        num_packets += 1;
                     }
                 }
-            //}
+            }
         }
+
+        return num_packets;
     }
 }
 
