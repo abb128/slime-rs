@@ -52,4 +52,6 @@ pub enum BackendDataRef<'a> {
 pub trait BackendRemoteData: core::fmt::Debug {
     fn get_data(&self) -> BackendDataRef<'_>;
     fn get_data_mut(&mut self) -> BackendDataMutRef<'_>;
+
+    fn is_alive(&self) -> bool;
 }
