@@ -1,6 +1,6 @@
 use deku::prelude::*;
 
-#[derive(PartialEq, Debug, DekuRead, DekuWrite)]
+#[derive(PartialEq, Debug, DekuRead, DekuWrite, Clone, Copy)]
 #[deku(endian = "endian", ctx = "endian: deku::ctx::Endian")]
 pub struct Vector {
 	pub x: f32,
@@ -26,7 +26,7 @@ pub struct Matrix3x3 {
 }
 
 
-#[derive(PartialEq, Debug, DekuRead, DekuWrite)]
+#[derive(PartialEq, Debug, DekuRead, DekuWrite, Clone, Copy)]
 #[deku(endian = "endian", ctx = "endian: deku::ctx::Endian")]
 pub struct Quaternion {
 	pub x: f32,
