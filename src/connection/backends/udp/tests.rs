@@ -3,9 +3,10 @@ mod udp_tests {
     use core::time;
     use std::str::FromStr;
     use std::net::SocketAddr;
+    use std::time::{Duration, SystemTime};
     
     
-    use crate::connection::backends::enums::{BackendDataRef, BackendType};
+    use crate::connection::backends::enums::{BackendDataRef, BackendRemoteData, BackendType};
     use crate::packet_parsing::types::*;
     use crate::packet_parsing::server;
     use crate::connection::listener::{Listener, RemoteMap};
@@ -196,5 +197,28 @@ mod udp_tests {
                 panic!("A Client should've connected, but got a non-client");
             }
         }
+    }
+
+
+    #[test]
+    fn test_client_alive(){
+        let alive_client = UdpClient {
+            srv_addr: SocketAddr::from_str("0.0.0.0:1001").unwrap(),
+            last_addr: SocketAddr::from_str("0.0.0.0:1002").unwrap(),
+            last_activity: SystemTime::now() - Duration::from_millis(100)
+        };
+
+        assert!(alive_client.is_alive(), "Client with recent activity should be alive");
+    }
+
+    #[test]
+    fn test_client_dead(){
+        let alive_client = UdpClient {
+            srv_addr: SocketAddr::from_str("0.0.0.0:1001").unwrap(),
+            last_addr: SocketAddr::from_str("0.0.0.0:1002").unwrap(),
+            last_activity: SystemTime::now() - Duration::from_millis(20000)
+        };
+
+        assert!(!alive_client.is_alive(), "Client with no recent activity should be dead");
     }
 }
